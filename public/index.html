@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firewall Blocker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            max-width: 900px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section h2 {
+            color: #667eea;
+            font-size: 18px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            min-width: 250px;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-check {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-check:hover {
+            background: #5568d3;
+        }
+
+        .btn-allow {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-allow:hover {
+            background: #45a049;
+        }
+
+        .btn-block {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-block:hover {
+            background: #da190b;
+        }
+
+        .result {
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+            display: none;
+            font-size: 16px;
+        }
+
+        .result.allowed {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .result.blocked {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .list-container {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .list-item {
+            background: white;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid #667eea;
+        }
+
+        .list-item.blocked {
+            border-left-color: #f44336;
+        }
+
+        .list-item.allowed {
+            border-left-color: #4caf50;
+        }
+
+        .btn-remove {
+            background: #ff9800;
+            color: white;
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .btn-remove:hover {
+            background: #e68900;
+        }
+
+        .empty-message {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+            font-style: italic;
+        }
+
+        select {
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .type-selector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+
+            input[type="text"] {
+                min-width: 100%;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 Firewall Blocker</h1>
+        <p class="subtitle">Check, block, and allow URLs and IP addresses</p>
+
+        <!-- Check Access Section -->
+        <div class="section">
+            <h2>Check Access</h2>
+            <div class="input-group">
+                <input type="text" id="checkInput" placeholder="Enter URL, domain, or IP address (e.g., google.com or 192.168.1.1)">
+                <button class="btn-check" onclick="checkAccess()">Check Access</button>
+            </div>
+            <div id="checkResult" class="result"></div>
+        </div>
+
+        <!-- Block URL/Domain Section -->
+        <div class="section">
+            <h2>Block URL/Domain/IP</h2>
+            <div class="input-group">
+                <div class="type-selector">
+                    <select id="blockType">
+                        <option value="url">URL</option>
+                        <option value="domain">Domain</option>
+                        <option value="ip">IP Address</option>
+                    </select>
+                </div>
+                <input type="text" id="blockInput" placeholder="Enter URL, domain, or IP to block">
+                <button class="btn-block" onclick="blockAccess()">Block</button>
+            </div>
+        </div>
+
+        <!-- Allow URL/Domain Section -->
+        <div class="section">
+            <h2>Allow URL/Domain/IP</h2>
+            <div class="input-group">
+                <div class="type-selector">
+                    <select id="allowType">
+                        <option value="url">URL</option>
+                        <option value="domain">Domain</option>
+                        <option value="ip">IP Address</option>
+                    </select>
+                </div>
+                <input type="text" id="allowInput" placeholder="Enter URL, domain, or IP to allow">
+                <button class="btn-allow" onclick="allowAccess()">Allow</button>
+            </div>
+        </div>
+
+        <!-- Blocked List Section -->
+        <div class="section">
+            <h2>Blocked List</h2>
+            <div class="list-container" id="blockedListContainer">
+                <div class="empty-message">No blocked items yet</div>
+            </div>
+        </div>
+
+        <!-- Allowed List Section -->
+        <div class="section">
+            <h2>Allowed List</h2>
+            <div class="list-container" id="allowedListContainer">
+                <div class="empty-message">No allowed items yet</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check access
+        async function checkAccess() {
+            const input = document.getElementById('checkInput').value.trim();
+            const resultDiv = document.getElementById('checkResult');
+
+            if (!input) {
+                resultDiv.textContent = 'Please enter a URL, domain, or IP address';
+                resultDiv.className = 'result blocked';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/check-access', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ input })
+                });
+
+                const data = await response.json();
+                resultDiv.className = `result ${data.allowed ? 'allowed' : 'blocked'}`;
+                resultDiv.textContent = `${data.input} - ${data.status}`;
+            } catch (error) {
+                resultDiv.className = 'result blocked';
+                resultDiv.textContent = `Error: ${error.message}`;
+            }
+        }
+
+        // Block access
+        async function blockAccess() {
+            const input = document.getElementById('blockInput').value.trim();
+            const type = document.getElementById('blockType').value;
+
+            if (!input) {
+                alert('Please enter a URL, domain, or IP address');
+                return;
+            }
+
+            try {
+                await fetch('/api/block', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ input, type })
+                });
+
+                document.getElementById('blockInput').value = '';
+                loadLists();
+                alert(`${input} has been blocked!`);
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        // Allow access
+        async function allowAccess() {
+            const input = document.getElementById('allowInput').value.trim();
+            const type = document.getElementById('allowType').value;
+
+            if (!input) {
+                alert('Please enter a URL, domain, or IP address');
+                return;
+            }
+
+            try {
+                await fetch('/api/allow', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ input, type })
+                });
+
+                document.getElementById('allowInput').value = '';
+                loadLists();
+                alert(`${input} has been allowed!`);
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        // Remove from blocked list
+        async function removeBlocked(input, type) {
+            try {
+                await fetch('/api/unblock', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ input, type })
+                });
+                loadLists();
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        // Load and display lists
+        async function loadLists() {
+            try {
+                const response = await fetch('/api/lists');
+                const data = await response.json();
+
+                // Populate blocked list
+                const blockedContainer = document.getElementById('blockedListContainer');
+                const blockedAll = [
+                    ...data.blocked.urls.map(item => ({ item, type: 'url' })),
+                    ...data.blocked.domains.map(item => ({ item, type: 'domain' })),
+                    ...data.blocked.ips.map(item => ({ item, type: 'ip' }))
+                ];
+
+                if (blockedAll.length === 0) {
+                    blockedContainer.innerHTML = '<div class="empty-message">No blocked items yet</div>';
+                } else {
+                    blockedContainer.innerHTML = blockedAll.map(({ item, type }) => `
+                        <div class="list-item blocked">
+                            <span>${item} <small>(${type})</small></span>
+                            <button class="btn-remove" onclick="removeBlocked('${item}', '${type}')">Remove</button>
+                        </div>
+                    `).join('');
+                }
+
+                // Populate allowed list
+                const allowedContainer = document.getElementById('allowedListContainer');
+                const allowedAll = [
+                    ...data.allowed.urls.map(item => ({ item, type: 'url' })),
+                    ...data.allowed.domains.map(item => ({ item, type: 'domain' })),
+                    ...data.allowed.ips.map(item => ({ item, type: 'ip' }))
+                ];
+
+                if (allowedAll.length === 0) {
+                    allowedContainer.innerHTML = '<div class="empty-message">No allowed items yet</div>';
+                } else {
+                    allowedContainer.innerHTML = allowedAll.map(({ item, type }) => `
+                        <div class="list-item allowed">
+                            <span>${item} <small>(${type})</small></span>
+                            <button class="btn-remove" onclick="removeBlocked('${item}', '${type}')">Remove</button>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading lists:', error);
+            }
+        }
+
+        // Allow Enter key to check access
+        document.getElementById('checkInput')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') checkAccess();
+        });
+
+        // Load lists on page load
+        window.onload = () => loadLists();
+    </script>
+</body>
+</html>
