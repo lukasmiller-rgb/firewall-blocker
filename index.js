@@ -8,23 +8,19 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ============================================================================
-// MIDDLEWARE & SECURITY
-// ============================================================================
-
-// Rate limiting to prevent abuse
+// Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.',
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: 'Too many requests',
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 const apiLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: 30, // limit each IP to 30 API requests per minute
-  message: 'Too many API requests, please try again later.',
+  windowMs: 1 * 60 * 1000,
+  max: 30,
+  message: 'Too many API requests',
 });
 
 // Middleware
@@ -38,20 +34,14 @@ app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
-  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src https://cdnjs.cloudflare.com;");
   next();
 });
 
-// ============================================================================
-// VALIDATION HELPERS
-// ============================================================================
-
+// Validation helpers
 const isValidIP = (ip) => {
   const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
   if (!ipRegex.test(ip)) return false;
-  const parts = ip.split('.');
-  return parts.every(part => {
+  return ip.split('.').every(part => {
     const num = parseInt(part, 10);
     return num >= 0 && num <= 255;
   });
@@ -78,21 +68,14 @@ const extractDomain = (input) => {
 
 const sanitizeInput = (input) => {
   if (typeof input !== 'string') return '';
-  return input
-    .trim()
-    .slice(0, 500)
-    .replace(/[<>"']/g, '')
-    .toLowerCase();
+  return input.trim().slice(0, 500).replace(/[<>"']/g, '').toLowerCase();
 };
 
 const isValidType = (type) => {
   return ['url', 'domain', 'ip'].includes(type);
 };
 
-// ============================================================================
-// DATA STORAGE
-// ============================================================================
-
+// Data storage
 const listStore = {
   blocked: { urls: [], ips: [], domains: [] },
   allowed: { urls: [], ips: [], domains: [] },
@@ -137,16 +120,13 @@ const listStore = {
   }
 };
 
-// ============================================================================
-// ROUTES
-// ============================================================================
-
+// Routes
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString(), uptime: process.uptime() });
+  res.json({ status: 'ok', uptime: process.uptime() });
 });
 
 app.post('/api/check-access', apiLimiter, async (req, res) => {
@@ -163,11 +143,9 @@ app.post('/api/check-access', apiLimiter, async (req, res) => {
     res.json({
       input: sanitized,
       allowed: isAllowed,
-      status: isAllowed ? 'ALLOWED' : 'BLOCKED',
-      timestamp: new Date().toISOString()
+      status: isAllowed ? 'ALLOWED' : 'BLOCKED'
     });
   } catch (error) {
-    console.error('Check access error:', error);
     res.status(400).json({ error: error.message });
   }
 });
@@ -184,11 +162,9 @@ app.post('/api/allow', apiLimiter, (req, res) => {
     listStore.addItem('allowed', type, input);
     res.json({
       message: `${input} added to allowed list`,
-      lists: listStore.getLists(),
-      timestamp: new Date().toISOString()
+      lists: listStore.getLists()
     });
   } catch (error) {
-    console.error('Allow error:', error);
     res.status(400).json({ error: error.message });
   }
 });
@@ -205,11 +181,9 @@ app.post('/api/block', apiLimiter, (req, res) => {
     listStore.addItem('blocked', type, input);
     res.json({
       message: `${input} added to blocked list`,
-      lists: listStore.getLists(),
-      timestamp: new Date().toISOString()
+      lists: listStore.getLists()
     });
   } catch (error) {
-    console.error('Block error:', error);
     res.status(400).json({ error: error.message });
   }
 });
@@ -229,26 +203,18 @@ app.post('/api/unblock', apiLimiter, (req, res) => {
     }
     res.json({
       message: `${input} removed`,
-      lists: listStore.getLists(),
-      timestamp: new Date().toISOString()
+      lists: listStore.getLists()
     });
   } catch (error) {
-    console.error('Unblock error:', error);
     res.status(400).json({ error: error.message });
   }
 });
 
 app.get('/api/lists', apiLimiter, (req, res) => {
-  res.json({
-    lists: listStore.getLists(),
-    timestamp: new Date().toISOString()
-  });
+  res.json({ lists: listStore.getLists() });
 });
 
-// ============================================================================
-// ACCESS CHECKING
-// ============================================================================
-
+// Access checking
 async function checkAccess(input) {
   const isIP = isValidIP(input);
   const domain = extractDomain(input);
@@ -279,10 +245,7 @@ async function checkAccess(input) {
   }
 }
 
-// ============================================================================
-// ERROR HANDLING
-// ============================================================================
-
+// Error handling
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
 });
@@ -294,18 +257,13 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ============================================================================
-// START SERVER
-// ============================================================================
-
+// Start server
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🔥 Firewall Blocker running on port ${PORT}`);
   console.log(`📋 Access at http://localhost:${PORT}`);
-  console.log(`🏥 Health check: http://localhost:${PORT}/health`);
 });
 
 process.on('SIGTERM', () => {
-  console.log('Shutting down...');
   server.close(() => {
     console.log('Server closed');
     process.exit(0);
@@ -313,7 +271,6 @@ process.on('SIGTERM', () => {
 });
 
 process.on('SIGINT', () => {
-  console.log('Shutting down...');
   server.close(() => {
     console.log('Server closed');
     process.exit(0);

@@ -1,15 +1,12 @@
 {
   "name": "firewall-blocker",
   "version": "1.0.0",
-  "description": "A robust firewall application for filtering and blocking network traffic",
+  "description": "A robust firewall application",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js"
   },
-  "keywords": ["firewall", "blocker", "network", "security"],
-  "author": "lukasmiller-rgb",
-  "license": "MIT",
   "engines": {
     "node": ">=14.0.0"
   },
